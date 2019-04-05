@@ -33,7 +33,7 @@ func main() {
 		panic(err)
 	}
 
-	for _, conn := range connections.Connections {
+	for _, conn := range connections {
 		depTime, _ := time.Parse("2006-01-02T15:04:05.999", conn.From.Departure)
 		arrTime, _ := time.Parse("2006-01-02T15:04:05.999", conn.To.Arrival)
 		minutes := conn.Duration / 1000 / 60
