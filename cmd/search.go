@@ -31,9 +31,61 @@ func formatDuration(dur int) string {
 	return rgbterm.InterpretStr(durStr)
 }
 
+func formatDelayTime(str string) (string, error) {
+	if str == "" {
+		return "", nil
+	}
+
+	delayTime, err := formatConnTime(str)
+	if err != nil {
+		return "", err
+	}
+	return rgbterm.InterpretStr("{#ff0000}" + delayTime + "{}"), nil
+}
+
+func formatDelayLine(depDelay, arrDelay string, dep, arr *string) string {
+	delayLine := ""
+
+	if depDelay == "" {
+		delayLine += strings.Repeat(" ", len(*dep)+1)
+	} else {
+		delayLine += depDelay + " "
+		*dep = util.Strikethrough(*dep)
+	}
+
+	if arrDelay != "" {
+		delayLine += arrDelay
+		*arr = util.Strikethrough(*arr)
+	}
+
+	return delayLine
+}
+
 func displaySection(section oebb.Section) error {
-	dep, _ := formatConnTime(section.From.Departure)
-	arr, _ := formatConnTime(section.To.Arrival)
+	dep, err := formatConnTime(section.From.Departure)
+	if err != nil {
+		return err
+	}
+
+	arr, err := formatConnTime(section.To.Arrival)
+	if err != nil {
+		return err
+	}
+
+	depDelay, err := formatDelayTime(section.From.DepartureDelay)
+	if err != nil {
+		return err
+	}
+
+	arrDelay, err := formatDelayTime(section.To.ArrivalDelay)
+	if err != nil {
+		return err
+	}
+
+	if depDelay != "" || arrDelay != "" {
+		fmt.Println("\t" + formatDelayLine(depDelay, arrDelay, &dep, &arr))
+	}
+
 	cname := section.Category.DisplayName
 	if cname == "" {
 		cname = section.Category.ShortName
@@ -43,7 +95,7 @@ func displaySection(section oebb.Section) error {
 		strings.ToUpper(cname)),
 	)
 
-	times := rgbterm.InterpretStr(fmt.Sprintf("{#555555}%s-%s{}", dep, arr))
+	times := rgbterm.InterpretStr(fmt.Sprintf("{#555555}%s{}{#555555}-{}{#555555}%s{}", dep, arr))
 	fmt.Printf("\t%s %s %s -> %s\n", times, category, section.From.Name, section.To.Name)
 	return nil
 }
@@ -57,6 +109,20 @@ func displayConnection(conn oebb.Connection) error {
 	arr, err := formatConnTime(conn.To.Arrival)
 	if err != nil {
 		return err
+	}
+
+	depDelay, err := formatDelayTime(conn.From.DepartureDelay)
+	if err != nil {
+		return err
+	}
+
+	arrDelay, err := formatDelayTime(conn.To.ArrivalDelay)
+	if err != nil {
+		return err
+	}
+
+	if depDelay != "" || arrDelay != "" {
+		fmt.Println(formatDelayLine(depDelay, arrDelay, &dep, &arr))
 	}
 
 	durStr := formatDuration(conn.Duration)
@@ -77,7 +143,7 @@ var searchCmd = &cobra.Command{
 	Short: "Search connections",
 	Args:  cobra.MinimumNArgs(2),
 	Run: func(cmd *cobra.Command, args []string) {
-		resp, err := oebb.Auth()
+		auth, err := oebb.Auth()
 		if err != nil {
 			panic(err)
 		}
@@ -85,12 +151,26 @@ var searchCmd = &cobra.Command{
 		from := args[0]
 		to := args[1]
 
-		fromStation, err := oebb.GetStations(from, resp)
-		toStation, err := oebb.GetStations(to, resp)
-
-		connections, err := oebb.GetConnections(fromStation[0], toStation[0], resp)
+		fromStation, err := oebb.GetStations(from, auth)
 		if err != nil {
 			panic(err)
+		}
+
+		toStation, err := oebb.GetStations(to, auth)
+		if err != nil {
+			panic(err)
+		}
+
+		connections, err := oebb.GetConnections(fromStation[0], toStation[0], auth, time.Now())
+		if err != nil {
+			panic(err)
+		}
+
+		if len(connections) < 1 {
+			errFrom := rgbterm.InterpretStr("{#cc6666}" + fromStation[0].Name + "{}")
+			errTo := rgbterm.InterpretStr("{#cc6666}" + toStation[0].Name + "{}")
+			fmt.Printf("No connections found from %s to %s\n",
+				errFrom, errTo)
 		}
 
 		for _, conn := range connections {
