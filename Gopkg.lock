@@ -7,9 +7,27 @@
   packages = ["."]
   revision = "cc83f3b3ce5911279513a46d6d3316d67bedaa54"
 
+[[projects]]
+  name = "github.com/inconshreveable/mousetrap"
+  packages = ["."]
+  revision = "76626ae9c91c4f2a10f34cad8ce83ea42c93bb75"
+  version = "v1.0"
+
+[[projects]]
+  name = "github.com/spf13/cobra"
+  packages = ["."]
+  revision = "ef82de70bb3f60c65fb8eebacbb2d122ef517385"
+  version = "v0.0.3"
+
+[[projects]]
+  name = "github.com/spf13/pflag"
+  packages = ["."]
+  revision = "298182f68c66c05229eb03ac171abe6e309ee79a"
+  version = "v1.0.3"
+
 [solve-meta]
   analyzer-name = "dep"
   analyzer-version = 1
-  inputs-digest = "6ec628a643fce21c669dc3eb81a081e4e1fff5544e2e386f36839ef02d4a7066"
+  inputs-digest = "7c626f103358e7d82f4b0b4262270a67bce16eb3d1634473580e1f1fd72aac0b"
   solver-name = "gps-cdcl"
   solver-version = 1
