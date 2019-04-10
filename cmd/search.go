@@ -161,7 +161,12 @@ var searchCmd = &cobra.Command{
 			panic(err)
 		}
 
-		connections, err := oebb.GetConnections(fromStation[0], toStation[0], auth, time.Now())
+		numResults, err := cmd.Flags().GetInt("results")
+		if err != nil {
+			panic(err)
+		}
+
+		connections, err := oebb.GetConnections(fromStation[0], toStation[0], auth, time.Now(), numResults)
 		if err != nil {
 			panic(err)
 		}
