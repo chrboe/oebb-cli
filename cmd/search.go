@@ -138,6 +138,14 @@ func displayConnection(conn oebb.Connection) error {
 	return nil
 }
 
+func nameOrMeta(station oebb.Station) string {
+	if station.Name == "" {
+		return station.Meta
+	}
+
+	return station.Name
+}
+
 var searchCmd = &cobra.Command{
 	Use:   "search [from] [to]",
 	Short: "Search connections",
@@ -172,8 +180,8 @@ var searchCmd = &cobra.Command{
 		}
 
 		if len(connections) < 1 {
-			errFrom := rgbterm.InterpretStr("{#cc6666}" + fromStation[0].Name + "{}")
-			errTo := rgbterm.InterpretStr("{#cc6666}" + toStation[0].Name + "{}")
+			errFrom := rgbterm.InterpretStr("{#cc6666}" + nameOrMeta(fromStation[0]) + "{}")
+			errTo := rgbterm.InterpretStr("{#cc6666}" + nameOrMeta(toStation[0]) + "{}")
 			fmt.Printf("No connections found from %s to %s\n",
 				errFrom, errTo)
 		}
