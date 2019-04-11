@@ -1,10 +1,13 @@
 package cmd
 
 import (
+	"encoding/json"
 	"fmt"
+	"io/ioutil"
 	"strings"
 	"time"
 
+	"github.com/adrg/xdg"
 	"github.com/aybabtme/rgbterm"
 	"github.com/briandowns/spinner"
 	"github.com/chrboe/oebb"
@@ -147,6 +150,42 @@ func nameOrMeta(station oebb.Station) string {
 	return station.Name
 }
 
+func cacheAuth(auth oebb.AuthInfo, filename string) error {
+	bytes, err := json.Marshal(auth)
+	if err != nil {
+		return err
+	}
+
+	err = ioutil.WriteFile(filename, bytes, 0600)
+	return err
+}
+
+// maybeCachedAuth returns possibly cached authentication information
+func maybeCachedAuth() (*oebb.AuthInfo, error) {
+	cache, err := xdg.SearchCacheFile("oebb-cli/auth.json")
+	if err != nil {
+		auth, err := oebb.Auth()
+		if err != nil {
+			return nil, err
+		}
+
+		newCache, err := xdg.CacheFile("oebb-cli/auth.json")
+		if err != nil {
+			return nil, err
+		}
+
+		err = cacheAuth(auth, newCache)
+		return &auth, err
+	}
+
+	bytes, err := ioutil.ReadFile(cache)
+
+	var newAuth oebb.AuthInfo
+	err = json.Unmarshal(bytes, &newAuth)
+
+	return &newAuth, err
+}
+
 var searchCmd = &cobra.Command{
 	Use:   "search [from] [to]",
 	Short: "Search connections",
@@ -166,10 +205,12 @@ var searchCmd = &cobra.Command{
 			panic(err)
 		}
 
-		auth, err := oebb.Auth()
+		pAuth, err := maybeCachedAuth()
 		if err != nil {
 			panic(err)
 		}
+
+		auth := *pAuth
 
 		from := args[0]
 		to := args[1]

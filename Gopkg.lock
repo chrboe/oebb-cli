@@ -3,6 +3,12 @@
 
 [[projects]]
   branch = "master"
+  name = "github.com/adrg/xdg"
+  packages = ["."]
+  revision = "88e5137d2444351e59b3562bc44317e0ffbf810f"
+
+[[projects]]
+  branch = "master"
   name = "github.com/aybabtme/rgbterm"
   packages = ["."]
   revision = "cc83f3b3ce5911279513a46d6d3316d67bedaa54"
@@ -58,6 +64,6 @@
 [solve-meta]
   analyzer-name = "dep"
   analyzer-version = 1
-  inputs-digest = "a9fc3b5bf1c5fb07b7bc81775b5d1837e48abb83d11cd5d12f0317fd0fad64af"
+  inputs-digest = "bee21664d7e519dcb2d0d70a549dd4c5a96840d849964e08fb06c0b88f1a2ed7"
   solver-name = "gps-cdcl"
   solver-version = 1
