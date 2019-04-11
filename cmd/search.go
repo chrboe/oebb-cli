@@ -151,6 +151,16 @@ var searchCmd = &cobra.Command{
 	Short: "Search connections",
 	Args:  cobra.MinimumNArgs(2),
 	Run: func(cmd *cobra.Command, args []string) {
+		numResults, err := cmd.Flags().GetInt("results")
+		if err != nil {
+			panic(err)
+		}
+
+		depTimeStr, err := cmd.Flags().GetString("time")
+		if err != nil {
+			panic(err)
+		}
+
 		auth, err := oebb.Auth()
 		if err != nil {
 			panic(err)
@@ -169,12 +179,21 @@ var searchCmd = &cobra.Command{
 			panic(err)
 		}
 
-		numResults, err := cmd.Flags().GetInt("results")
-		if err != nil {
-			panic(err)
+		var depTime time.Time
+		if depTimeStr == "" {
+			depTime = time.Now()
+		} else {
+			depTime, err = time.Parse("15:04", depTimeStr)
+			if err != nil {
+				panic(err)
+			}
+
+			now := time.Now()
+			depTime = depTime.AddDate(now.Year(), int(now.Month())-1, now.Day()-1)
 		}
 
-		connections, err := oebb.GetConnections(fromStation[0], toStation[0], auth, time.Now(), numResults)
+		connections, err := oebb.GetConnections(fromStation[0], toStation[0], auth, depTime, numResults)
+
 		if err != nil {
 			panic(err)
 		}
@@ -182,8 +201,7 @@ var searchCmd = &cobra.Command{
 		if len(connections) < 1 {
 			errFrom := rgbterm.InterpretStr("{#cc6666}" + nameOrMeta(fromStation[0]) + "{}")
 			errTo := rgbterm.InterpretStr("{#cc6666}" + nameOrMeta(toStation[0]) + "{}")
-			fmt.Printf("No connections found from %s to %s\n",
-				errFrom, errTo)
+			fmt.Printf("No connections found from %s to %s\n", errFrom, errTo)
 		}
 
 		for _, conn := range connections {

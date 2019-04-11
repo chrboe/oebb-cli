@@ -18,6 +18,7 @@ var rootCmd = &cobra.Command{
 
 func Execute() {
 	searchCmd.Flags().IntP("results", "n", 5, "Number of search results to display")
+	searchCmd.Flags().StringP("time", "t", "", "Departure time")
 	rootCmd.AddCommand(searchCmd)
 	if err := rootCmd.Execute(); err != nil {
 		fmt.Println(err)
