@@ -6,6 +6,7 @@ import (
 	"time"
 
 	"github.com/aybabtme/rgbterm"
+	"github.com/briandowns/spinner"
 	"github.com/chrboe/oebb"
 	"github.com/chrboe/oebb-cli/util"
 	"github.com/spf13/cobra"
@@ -151,6 +152,10 @@ var searchCmd = &cobra.Command{
 	Short: "Search connections",
 	Args:  cobra.MinimumNArgs(2),
 	Run: func(cmd *cobra.Command, args []string) {
+		s := spinner.New([]string{"|", "/", "-", "\\"}, 50*time.Millisecond, spinner.WithHiddenCursor(true))
+		s.Prefix = "Searching for connections "
+		s.Start()
+
 		numResults, err := cmd.Flags().GetInt("results")
 		if err != nil {
 			panic(err)
@@ -194,6 +199,7 @@ var searchCmd = &cobra.Command{
 
 		connections, err := oebb.GetConnections(fromStation[0], toStation[0], auth, depTime, numResults)
 
+		s.Stop()
 		if err != nil {
 			panic(err)
 		}
