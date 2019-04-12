@@ -4,6 +4,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"io/ioutil"
+	"os"
 	"strings"
 	"time"
 
@@ -193,6 +194,7 @@ var searchCmd = &cobra.Command{
 	Run: func(cmd *cobra.Command, args []string) {
 		s := spinner.New([]string{"|", "/", "-", "\\"}, 50*time.Millisecond, spinner.WithHiddenCursor(true))
 		s.Prefix = "Searching for connections "
+		s.Writer = os.Stderr
 		s.Start()
 
 		numResults, err := cmd.Flags().GetInt("results")
