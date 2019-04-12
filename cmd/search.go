@@ -202,6 +202,22 @@ func maybeCachedAuth() (*oebb.AuthInfo, error) {
 	return &newAuth, err
 }
 
+func handleTimeoutError(e error, auth *oebb.AuthInfo) bool {
+	switch e.(type) {
+	case *oebb.SessionTimeoutError:
+		a, err := authAndCache("oebb-cli/auth.json")
+		if err != nil {
+			panic(e)
+		}
+
+		*auth = *a
+
+		return true
+	}
+
+	return false
+}
+
 var searchCmd = &cobra.Command{
 	Use:   "search [from] [to]",
 	Short: "Search connections",
@@ -234,12 +250,22 @@ var searchCmd = &cobra.Command{
 
 		fromStation, err := oebb.GetStations(from, auth)
 		if err != nil {
-			panic(err)
+			if handleTimeoutError(err, &auth) == true {
+				fromStation, err = oebb.GetStations(from, auth)
+				if err != nil {
+					panic(err)
+				}
+			}
 		}
 
 		toStation, err := oebb.GetStations(to, auth)
 		if err != nil {
-			panic(err)
+			if handleTimeoutError(err, &auth) {
+				toStation, err = oebb.GetStations(to, auth)
+				if err != nil {
+					panic(err)
+				}
+			}
 		}
 
 		var depTime time.Time
