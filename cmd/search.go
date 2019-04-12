@@ -161,28 +161,43 @@ func cacheAuth(auth oebb.AuthInfo, filename string) error {
 	return err
 }
 
+func authAndCache(filenameTemplate string) (*oebb.AuthInfo, error) {
+	auth, err := oebb.Auth()
+	if err != nil {
+		return nil, err
+	}
+
+	newCache, err := xdg.CacheFile(filenameTemplate)
+	if err != nil {
+		return nil, err
+	}
+
+	err = cacheAuth(auth, newCache)
+	return &auth, err
+}
+
 // maybeCachedAuth returns possibly cached authentication information
 func maybeCachedAuth() (*oebb.AuthInfo, error) {
 	cache, err := xdg.SearchCacheFile("oebb-cli/auth.json")
 	if err != nil {
-		auth, err := oebb.Auth()
-		if err != nil {
-			return nil, err
-		}
-
-		newCache, err := xdg.CacheFile("oebb-cli/auth.json")
-		if err != nil {
-			return nil, err
-		}
-
-		err = cacheAuth(auth, newCache)
-		return &auth, err
+		return authAndCache("oebb-cli/auth.json")
 	}
 
 	bytes, err := ioutil.ReadFile(cache)
 
 	var newAuth oebb.AuthInfo
 	err = json.Unmarshal(bytes, &newAuth)
+
+	// check token expiration date and automatically renew if expired
+	stat, err := os.Stat(cache)
+	if err != nil {
+		return nil, err
+	}
+
+	modTime := stat.ModTime()
+	if modTime.Add(time.Duration(newAuth.ExpiresIn) * time.Second).Before(time.Now()) {
+		return authAndCache("oebb-cli/auth.json")
+	}
 
 	return &newAuth, err
 }
