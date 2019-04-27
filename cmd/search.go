@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"io/ioutil"
 	"os"
+	"os/signal"
 	"strings"
 	"time"
 
@@ -218,6 +219,16 @@ func handleTimeoutError(e error, auth *oebb.AuthInfo) bool {
 	return false
 }
 
+func stopSpinnerOnCtrlC(s *spinner.Spinner) {
+	c := make(chan os.Signal, 1)
+	signal.Notify(c, os.Interrupt)
+	go func() {
+		<-c
+		s.Stop()
+		os.Exit(1)
+	}()
+}
+
 var searchCmd = &cobra.Command{
 	Use:   "search [from] [to]",
 	Short: "Search connections",
@@ -226,20 +237,26 @@ var searchCmd = &cobra.Command{
 		s := spinner.New([]string{"|", "/", "-", "\\"}, 50*time.Millisecond, spinner.WithHiddenCursor(true))
 		s.Prefix = "Searching for connections "
 		s.Writer = os.Stderr
+
+		stopSpinnerOnCtrlC(s)
+
 		s.Start()
 
 		numResults, err := cmd.Flags().GetInt("results")
 		if err != nil {
+			s.Stop()
 			panic(err)
 		}
 
 		depTimeStr, err := cmd.Flags().GetString("time")
 		if err != nil {
+			s.Stop()
 			panic(err)
 		}
 
 		pAuth, err := maybeCachedAuth()
 		if err != nil {
+			s.Stop()
 			panic(err)
 		}
 
@@ -253,6 +270,7 @@ var searchCmd = &cobra.Command{
 			if handleTimeoutError(err, &auth) == true {
 				fromStation, err = oebb.GetStations(from, auth)
 				if err != nil {
+					s.Stop()
 					panic(err)
 				}
 			}
@@ -263,6 +281,7 @@ var searchCmd = &cobra.Command{
 			if handleTimeoutError(err, &auth) {
 				toStation, err = oebb.GetStations(to, auth)
 				if err != nil {
+					s.Stop()
 					panic(err)
 				}
 			}
@@ -274,6 +293,7 @@ var searchCmd = &cobra.Command{
 		} else {
 			depTime, err = time.Parse("15:04", depTimeStr)
 			if err != nil {
+				s.Stop()
 				panic(err)
 			}
 
